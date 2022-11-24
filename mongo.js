@@ -1,12 +1,7 @@
-/*const mongoose = require('mongoose');
-const uri = "mongodb+srv://Emmanuel87:<password>@piiquante.rr4w20y.mongodb.net/?retryWrites=true&w=majority";
-
-mongoose.connect(uri).then((() => console.log("Connected to Mongo !"))).catch(err => console.error
-("Error connecting to Mongo", err));*/
-const mongoose = require("mongoose");
-const password = "zEHcvLGnfAawJ0aQ"
-const uri = `mongodb+srv://Emmanuel87:${password}@piiquante.rr4w20y.mongodb.net/?retryWrites=true&w=majority`;
-
+const mongoose = require('mongoose');
+const password = process.env.DB_PASSWORD
+const username = process.env.DB_USER
+const uri = `mongodb+srv://${username}:${password}@cluster0.1dgaomk.mongodb.net/?retryWrites=true&w=majority`; 
 
 mongoose
     .connect(uri)
