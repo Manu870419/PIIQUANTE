@@ -11,7 +11,7 @@ console.log("Variable d'environnement:",process.env.MOTDEPASSE)
 const mongo = require("./mongo")
 
 // Controllers
-const {createUser} = require("./Controllers/users")
+const {createUser, logUser} = require("./Controllers/users")
 
 
 // Middleware
@@ -20,6 +20,7 @@ app.use(express.json());
 
 // Routes
 app.post('/api/auth/signup', createUser)
+app.post('/api/auth/login', logUser)
 app.get('/', (req, res) => { res.send("hello World !") });
 
 //Listen
