@@ -9,5 +9,6 @@ app.use(cors())
 
 // Routes
 app.post('/api/auth/signup',)
+app.post('/api/auth/login',)
 app.get('/', (req,res) =>{res.send("hello World !")});
 app.listen(port, () => {console.log("Listening on port" + port)});

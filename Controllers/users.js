@@ -3,11 +3,7 @@ const bcrypt = require("bcrypt")
 
 async function createUser(req, res) {
     const {email, password} = req.body
-
     const hashedPassword = await hashPassword(password)
-
-    console.log('passeword:', password)
-    console.log('hasedPassword:', hashedPassword)
     const user = new User({ email, password:hashedPassword })
 
     user
@@ -21,9 +17,18 @@ function hashPassword(password) {
     return bcrypt.hash(password,saltRounds)
 }
 
-function logUser (req, res){
-    const email = req.body.email
-    const passeword = req.body.password
+async function logUser (req, res){
+    const {email, password} = req.body
+    const user = await User.findOne({email: email})
+
+    const isPasswordOk = await bcrypt.compare(password, user.password)
+    if (!isPasswordOk) {
+        res.status(403).send({message:"Mot de passe incorrect !"})
+    }
+    if (isPasswordOk) {
+        res.status(200).send({message:"connexion réussi"})
+    }
 }
+
 
 module.exports = {createUser, logUser}
