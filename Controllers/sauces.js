@@ -16,28 +16,32 @@ const Product = mongoose.model("Product", productSchema)
 
 function roadSauces(req, res) {
    console.log("le token a été validé, nous sommes dans roadSauces")
-   //console.log("le token à l'air bon", decoded)
+   //console.log("le token à l'air bon", decoded) 
    Product.find({}).then(products => res.send(products))
    //res.send({message:[{ sauce: "sauce1"}, { sauce: "sauce1"}]})
-
+  
 }
 
 function createSauces(req, res) {
-   const name = req.body.name
-   const manufacturer = req.body.manufacturer
-   console.log({ body: req.body })
+   const {body, file} = req
+   const {fileName} = file
+   const sauce = JSON.parse(body.sauce)
+   const {name, manufacturer, description, mainPepper, heat, userId} = sauce
+   function makeImageUrl(req, fileName){
+      return req.protocol + "://" + req.get("host") + "/images/" + fileName
+   }  
 
    const product = new Product({
-      userId: "pouet",
-      name: "pouet",
-      manufacturer: "pouet",
-      mainPepper: "pouet",
-      imageUrl: "pouet",
-      heat: 2,
-      likes: 2,
-      dsilikes: 2,
-      usersLiked: ["pouet"],
-      usersDisliked: ["pouet"]
+      userId: userId,
+      name: name,
+      manufacturer: manufacturer,
+      mainPepper: mainPepper,
+      imageUrl: makeImageUrl(req, fileName),
+      heat: heat,
+      likes: 0,
+      dsilikes: 0,
+      usersLiked: [],
+      usersDisliked: []
    })
    product.save().then((res) => console.log("Produit enregistré !", res)).catch(console.error)
 }
