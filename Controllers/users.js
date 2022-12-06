@@ -1,46 +1,65 @@
-const { User } = require("../mongo")
-const bcrypt = require("bcrypt")
-const jwt = require("jsonwebtoken")
+const bcrypt = require("bcrypt");
+const User = require("../Models/users");
+const jwt = require("jsonwebtoken");
+const validator = require("validator");
 
-async function createUser(req, res) {
-    try {
-        const { email, password } = req.body
-        const hashedPassword = await hashPassword(password)
-        const user = new User({ email, password: hashedPassword })
-        await user.save()
-        res.status(201).send({ message: "utilisateur enregistré !" })
-    } catch (err) {
-        res.status(409).send({ message: "User pas enregistré :" + err })
+// récupération de la clef de création de jeton de connection dans le fichier '.env'
+const dotenv = require("dotenv");
+dotenv.config();
+const tokenKey = process.env.TOKEN_KEY;
+
+function createUser(req, res, next) {
+    if (
+        validator.isEmail(req.body.email) &&
+        validator.isStrongPassword(req.body.password)
+    ) {
+        //10 passes de cryptages du mot de passe envoyé
+        bcrypt
+            .hash(req.body.password, 10)
+            .then((hash) => {
+                const user = new User({ email: req.body.email, password: hash });
+                user
+                    .save()
+                    .then(() => res.status(201).json({ message: "Compte créé !" }))
+                    .catch((error) => res.status(500).json({ error }));
+            })
+    } else {
+        res
+            .status(400)
+            .send(
+                "renseignez un mail valide et un mot de passe fort: 8 à 20 caractères et contenant minimum une majuscule, une minuscule, un chiffre et caractère spéciale "
+            );
     }
-}
+};
 
-function hashPassword(password) {
-    const saltRounds = 10;
-    return bcrypt.hash(password, saltRounds)
-}
-
-async function logUser(req, res) {
-    try {
-
-        const { email, password } = req.body
-        const user = await User.findOne({ email: email })
-
-        const isPasswordOk = await bcrypt.compare(password, user.password)
-        if (!isPasswordOk) {
-            res.status(403).send({ message: "Mot de passe incorrect !" })
-        }
-        const token = createToken(email)
-        res.status(200).send({ userId: user._id, token: token })
-    } catch (err) {
-        console.error(err)
-        res.status(500).send({message: "Erreur interne"})
-    }
-
-}
-
-function createToken(email) {
-    const jwtPassword = process.env.JWT_PASSWORD
-    return token = jwt.sign({ email: email }, jwtPassword, { expiresIn: "24h" })
-}
+function logUser(req, res, next){
+    User.findOne({ email: req.body.email })
+        .then((user) => {
+            if (!user) {
+                return res.status(401).json({
+                    messsage: "mot de passe ou nom d'utilisateur incorrect" /* ! indiquer 
+        l'absence de l'user dans la BDD serait une fuite de donnée*/,
+                });
+            }
+            bcrypt
+                .compare(req.body.password, user.password)
+                .then((valid) => {
+                    if (!valid) {
+                        return res.status(401).json({
+                            messsage: "mot de passe ou nom d'utilisateur incorrect",
+                        });
+                    }
+                    res.status(200).json({
+                        message: "Vous êtes connectez",
+                        userId: user._id,
+                        token: jwt.sign({ userId: user._id }, tokenKey, {
+                            expiresIn: "24h",
+                        }),
+                    });
+                })
+                .catch((error) => res.status(500).json({ error }));
+        })
+        .catch((error) => res.status(501).json({ error }));
+};
 
 module.exports = { createUser, logUser }

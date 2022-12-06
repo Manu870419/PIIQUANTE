@@ -1,18 +1,17 @@
-const jwt = require("jsonwebtoken")
+const tokenManager = require("jsonwebtoken");
+// récupération de la clef de création de jeton de connection dans le fichier '.env'
+const dotenv = require("dotenv");
+dotenv.config()
+const tokenKey = process.env.TOKEN_KEY
 
-function authenticateUser(req, res, next) {
-    console.log("authenticate user")
-    const header = req.header("Authorization")
-    if (header == null) return res.status(403).send({ message: "Invalide" })
-
-    const token = header.split(" ")[1]
-    if (token == null) return res.status(403).send({ message: "Token cannot be null" })
-
-    jwt.verify(token, process.env.JWT_PASSWORD, (err, decoded) => {
-        if (err) return res.status(403).send({ message: "Token invalide" + err })
-        console.log("Le token est bien valide, on continue")
-        next()
-    })
-}
-
-module.exports = { authenticateUser }
+module.exports = (req, res, next) => {
+  try {
+    const token = req.headers.authorization.split(' ')[1];//split extrait le token après le premiére espace (juste aprés le mot 'Bearer')
+    const decodedToken = tokenManager.verify(token, tokenKey);
+    const userId = decodedToken.userId;
+    req.auth = { userId: userId };
+    next();
+  } catch (error) {
+    res.status(401).json({ error });
+  }
+};
