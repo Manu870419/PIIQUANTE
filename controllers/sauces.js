@@ -1,4 +1,4 @@
-const Sauce = require("../Models/sauces")
+const Sauce = require("../models/sauces")
 const fs = require("fs")
 
 function getAllSauces(req, res) {
@@ -21,6 +21,7 @@ function getSauce(req, res) {
 
 
 function createSauces(req, res) {
+   console.log(sauceObject)
    // La requête est convertis en form/data (string) par multer il faut donc la parser
    const sauceObject = JSON.parse(body.sauce);
    // Suppression de l'userId reçu du client par sécurité

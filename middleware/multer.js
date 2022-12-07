@@ -24,7 +24,6 @@ const storage = multer.diskStorage({
   }
 });
 // Methode single pour ne traiter qu'un fichier de type 'image' à la fois
-
-const upload = multer({storage}).single('image');
+const upload =  multer({storage}).single('image');
 
 module.exports = {upload};
