@@ -1,8 +1,8 @@
-const express = require('express')
+const express = require('express');
 const app = express();
-const mongoose = require('mongoose')
-const routesUsers = require('./routes/users')
-const routesSauces = require('./routes/sauces')
+const mongoose = require('mongoose');
+const routesUsers = require('./routes/users');
+const routesSauces = require('./routes/sauces');
 const path = require('path');
 // récupperation des identifiants de connection dans le fichier '.env'
 const dotenv = require("dotenv");

@@ -20,8 +20,8 @@ function createUser(req, res, next) {
                 const user = new User({ email: req.body.email, password: hash });
                 user
                     .save()
-                    .then(() => res.status(201).json({ message: "Compte créé !" }))
-                    .catch((error) => res.status(500).json({ error }));
+                    .then(() => res.status(201).send({ message: "Compte créé !" }))
+                    .catch((error) => res.status(500).send({ error }));
             })
     } else {
         res

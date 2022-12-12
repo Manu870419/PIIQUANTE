@@ -21,9 +21,8 @@ function getSauce(req, res) {
 
 
 function createSauces(req, res) {
-   console.log(sauceObject)
    // La requête est convertis en form/data (string) par multer il faut donc la parser
-   const sauceObject = JSON.parse(body.sauce);
+   const sauceObject = JSON.parse(req.body.sauce);
    // Suppression de l'userId reçu du client par sécurité
    delete sauceObject._id;
    const sauce = new Sauce({
@@ -34,7 +33,7 @@ function createSauces(req, res) {
       imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
    })
 
-   product.save()
+   sauce.save()
       .then((message) => {
          res.status(201).send({ message: "Recette ajoutée" })
          return console.log("Produit enregistré !", message)
