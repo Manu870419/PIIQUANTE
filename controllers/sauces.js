@@ -1,5 +1,6 @@
-const Sauce = require("../models/sauces")
-const fs = require("fs")
+const Sauce = require("../models/sauces");
+const mongoose = require('mongoose');
+const fs = require("fs");
 
 function getAllSauces(req, res) {
    Sauce.find({})
@@ -45,8 +46,9 @@ async function modifySauce(req, res) {
    const sauceTargeted = await Sauce.findById(req.params.id)
    let sauceUpdate = {};// contiendra le corp de requête
    const invalidUser = sauceTargeted != req.auth.userId;
+
    // si tentative de modification de la sauce d'un autre user
-   if (invalidUser) {
+   if (!invalidUser) {
       res.status(403).send({ message: "Non-autorisé !" });
    } else {
       // Test si la requête contient un fichier form/Data (= stringifié par multer)
@@ -69,8 +71,10 @@ async function modifySauce(req, res) {
       // réécrire l'_id présent dans l'url pour le cas ou un autre _id serait inséré dans le body
       { ...sauceUpdate, _id: req.params.id }
    )
-      .then(res.status(200).send({ message: "Sauce mise à jour !" }))
-      .catcth((error) => res.status(400).send({ error }));
+      .then(res.status(201).send({ message: "Sauce mise à jour !" }))
+      .catch((error) => {
+         res.status(400).send({ error })
+      });
 };
 
 function deleteSauce(req, res) {
@@ -80,13 +84,13 @@ function deleteSauce(req, res) {
       .then((sauce) => {
          // Test si la requête ne provient pas du propriétaire de la sauce
          if (sauce.userId != req.auth.userId) {
-            res.status(401).send({ message: "Non-autorisé" }); 
+            res.status(401).send({ message: "Non-autorisé" });
          }// Si la requête provient bien du propriétaire: récupération du nom du fichier 
          else {
             const filename = sauce.imageUrl.split("/images/")[1];
             // suppression du fichier image
             fs.unlink(`image/${filename}`,
-            // puis suppression définitive de l'objet/sauce dans la Base de données.
+               // puis suppression définitive de l'objet/sauce dans la Base de données.
                () => {
                   sauce.deleteOne({ _id: req.params.id })
                      .then(() => {
@@ -104,7 +108,7 @@ function likeSauce(req, res) {
    try {
       Sauce.findById(req.params.id)
          .then((sauce) => {
-          // Suppression de l'userId si déjà présent dans les tableaux: userLiked et usersDisliked
+            // Suppression de l'userId si déjà présent dans les tableaux: userLiked et usersDisliked
             let likersIds = sauce.usersLiked.filter((idList) => idList !== req.auth.userId);
             let dsilikersIds = sauce.usersDisliked.filter((idList) => idList !== req.auth.userId);
             switch (req.body.like) {
