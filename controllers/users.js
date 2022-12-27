@@ -53,7 +53,7 @@ function logUser(req, res, next){
                         message: "Vous êtes connectez",
                         userId: user._id,
                         token: jwt.sign({ userId: user._id }, tokenKey, {
-                            expiresIn: "3h",
+                            expiresIn: "24h",
                         }),
                     });
                 })
