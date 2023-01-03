@@ -1,6 +1,6 @@
 const Sauce = require("../models/sauces");
 const mongoose = require('mongoose');
-const fs = require("fs");
+const { unlink } = require("fs/promises");
 
 function getAllSauces(req, res) {
    Sauce.find({})
@@ -41,67 +41,74 @@ function createSauces(req, res) {
       .catch(console.error)
 }
 
-async function modifySauce(req, res) {
-   const sauceTargeted = await Sauce.findById(req.params.id)
-   let sauceUpdate = {};// contiendra le corp de requête
-   const invalidUser = sauceTargeted != req.auth.userId;
+function modifySauce(req, res) {
+   const { params:{id}} = req
+   const hasNewImage = req.file != null
+   // Mise à jour de la nouvelle image et de son URL
+   const payload = makePayload(hasNewImage, req)
 
-   // si tentative de modification de la sauce d'un autre user
-   if (!invalidUser) {
-      res.status(403).send({ message: "Non-autorisé !" });
-   } else {
-      // Test si la requête contient un fichier form/Data (= stringifié par multer)
-      if (req.file) {
-         // Parser la requête
-         sauceUpdate = { ...JSON.parse(req.body.sauce) };
-         //suppression de l'ancienne image
-         let oldPic = sauceTargeted.imageUrl.split("/images/")[1];
-         fs.unlinkSync(`images/${oldPic}`);
-         // mise à jour de l'URL de la nouvelle image
-         sauceUpdate.imageUrl = `${req.protocol}://${req.get("host")}/images/${req.file.filename}`;
-      } else {
-         sauceUpdate = { ...req.body };
-      }
-   }
-   delete sauceUpdate.userId; // Ne pas faire confiance à l'userId de la requête!!!
-   // Sauvegarde de la mise à jour dans la base de données
-   Sauce.updateOne(
-      { _id: req.params.id },
-      // réécrire l'_id présent dans l'url pour le cas ou un autre _id serait inséré dans le body
-      { ...sauceUpdate, _id: req.params.id }
-   )
-      .then(res.status(201).send({ message: "Sauce mise à jour !" }))
-      .catch((error) => {
-         res.status(400).send({ error })
-      });
-};
+   Sauce.findByIdAndUpdate(id, payload)
+      // Test si la requête provient bien du propriétaire
+      .then ((dbResponse) => sendClientResponse(dbResponse, res))
+      // suppression du fichier image
+      .then((sauce) => deleteImage(sauce))
+      // Vérifis que le fichier est supprimé
+      .then((res) => console.log("FILE DELETED", res))
+      .catch((err) => console.error("PROBLEM UPDATING", err))
+}
 
-function deleteSauce(req, res) {
-   const { id } = req.params
+function deleteSauce(req, res){
+   const {id} = req.params
    // Ciblage de la sauce à modifier avec l'id présent dans l'url
    Sauce.findByIdAndDelete(id)
-      .then((sauce) => {
-         // Test si la requête ne provient pas du propriétaire de la sauce
-         if (sauce.userId != req.auth.userId) {
-            res.status(401).send({ message: "Non-autorisé" });
-         }// Si la requête provient bien du propriétaire: récupération du nom du fichier 
-         else {
-            const filename = sauce.imageUrl.split("/images/")[1];
-            // suppression du fichier image
-            fs.unlink(`image/${filename}`,
-               // puis suppression définitive de l'objet/sauce dans la Base de données.
-               () => {
-                  sauce.deleteOne({ _id: req.params.id })
-                     .then(() => {
-                        res.status(200).send({ message: "Sauce supprimée" });
-                     })
-                     .catch((error) => {
-                        res.status(400).send({ error });
-                     })
-               })
-         }
-      })
+      // Test si la requête  provient bien du propriétaire de la sauce 
+      .then((sauce) => sendClientResponse(sauce, res))
+      // suppression du fichier image
+      .then((sauce) => deleteImage(sauce))
+       // Vérifis que le fichier est supprimé
+      .then ((res) => console.log("FILE DELETED", res))
+      .catch((err) => res.status(500).send({ message: err}))
 }
+
+//Test si la requête provient bien du propriétaire
+function sendClientResponse(sauce,res) {
+   if(sauce == null) {
+      console.log("NOTHING TO UPDATE")
+      //Il n'y a rien à mettre à jour ou l'objet est introuvable dans la base de donnée 
+      return res.status(404).send({ message: "Object not found in database"}) 
+   }
+    // Tout va bien , mise à jour
+   console.log("ALL GOOD, UPDATING:", sauce)
+   // Mise à jour réussi
+   return Promise.resolve(res.status(200).send({ message: "Successfully update"})).then(() => sauce)
+}
+ // Mise à jour de la nouvelle image
+function makePayload(hasNewImage, req) {
+   console.log("hasNewImage:", hasNewImage)
+   // si ce n'est pas une nouvelle image
+   if(!hasNewImage) return req.body
+   // on parse la requête
+   const payload = Json.parse(req.body.sauce)
+   // mise à jour de l'URL de la nouvelle image
+   payload.imageUrl = makeImageUrl(req, req.file.filename)
+   console.log("Nouvelle image à gérer!!")
+   console.log("Voici le payload:", payload)
+   return payload
+}
+
+// mise à jour de l'URL de la nouvelle image
+function makeImageUrl(req, fileName) {
+   return req.protocol + "://" + req.get("host") + "/images"+ fileName
+}
+
+function deleteImage(sauce){
+   if(sauce == null) return
+   console.log("DELETE IMAGE", sauce)
+   // suppression de l'ancienne image
+   const imageToDelete = sauce.imageUrl.split("/").at(-1)
+   return unlink("images/" + imageToDelete)
+}
+
 
 function likeSauce(req, res) {
    try {
