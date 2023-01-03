@@ -4,6 +4,7 @@ const sauceSchema = new mongoose.Schema({
     userId: String,
     name: String,
     manufacturer: String,
+    description: String,
     mainPepper: String,
     imageUrl: String,
     heat: Number,

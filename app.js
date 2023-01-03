@@ -32,11 +32,7 @@ app.use((req, res, next) => {
   next();
 });
 //app.use(helmet());
-app.use(
-  helmet({
-    crossOriginResourcePolicy: false,
-  })
-);
+app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 
 
 app.use('/api/auth', routesUsers);

@@ -20,7 +20,6 @@ function getSauce(req, res) {
       });
 };
 
-
 function createSauces(req, res) {
    // La requête est convertis en form/data (string) par multer il faut donc la parser
    const sauceObject = JSON.parse(req.body.sauce);
