@@ -18,7 +18,7 @@ function getSauce(req, res) {
       })
       .catch((error) => {
          res.status(400).send({ error })
-      });
+      })
 };
 
 function createSauces(req, res) {
@@ -32,22 +32,22 @@ function createSauces(req, res) {
       userId: req.auth.userId,
       // Construction de l'URL pour stocker l'image dans le dossier pointé par le middlewear multer-conf.js
       imageUrl: `${req.protocol}://${req.get("host")}/images/${req.file.filename}`
-   })
+   });
 
    sauce.save()
       .then((message) => {
-         res.status(201).send({ message: "Recette ajoutée" })
-         return console.log("Produit enregistré !", message)
+         res.status(201).send({ message: "Recette ajoutée" });
+         return console.log("Produit enregistré !", message);
       })
       .catch(console.error)
-}
+};
 
 function modifySauce(req, res) {
-   const { params: { id } } = req
-   console.log("req.file", req.file)
-   const hasNewImage = req.file != null
+   const { params: { id } } = req;
+   console.log("req.file", req.file);
+   const hasNewImage = req.file != null;
    // Mise à jour de la nouvelle image et de son URL
-   const payload = makePayload(hasNewImage, req)
+   const payload = makePayload(hasNewImage, req);
 
    Sauce.findByIdAndUpdate(id, payload)
       // Test si la requête provient bien du propriétaire
@@ -57,15 +57,15 @@ function modifySauce(req, res) {
       // Vérifis que le fichier est supprimé
       .then((res) => console.log("FILE DELETED", res))
       .catch((err) => console.error("PROBLEM UPDATING", err))
-}
+};
 
 function deleteImage(sauce) {
-   if (sauce == null) return
-   console.log("DELETE IMAGE", sauce)
+   if (sauce == null) return;
+   console.log("DELETE IMAGE", sauce);
    // suppression de l'ancienne image
-   const imageToDelete = sauce.imageUrl.split("/").at(-1)
-   return unlink("images/" + imageToDelete)
-}
+   const imageToDelete = sauce.imageUrl.split("/").at(-1);
+   return unlink("images/" + imageToDelete);
+};
 
 function deleteSauce(req, res) {
    const { id } = req.params

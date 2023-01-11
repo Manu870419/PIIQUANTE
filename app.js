@@ -2,8 +2,8 @@ const express = require('express');
 const app = express();
 const helmet = require("helmet");
 const mongoose = require('mongoose');
-const routesUsers = require('./routes/users');
-const routesSauces = require('./routes/sauces');
+const usersRouter = require('./routers/users');
+const saucesRouter = require('./routers/sauces');
 const path = require('path');
 // récupperation des identifiants de connection dans le fichier '.env'
 const dotenv = require("dotenv");
@@ -11,15 +11,15 @@ dotenv.config()
 const password = process.env.DB_PASSWORD
 const username = process.env.DB_USER
 const db = process.env.DB_NAME
-const uri = `mongodb+srv://${username}:${password}@cluster0.1dgaomk.mongodb.net/${db}?retryWrites=true&w=majority`; 
+const uri = `mongodb+srv://${username}:${password}@cluster0.1dgaomk.mongodb.net/${db}?retryWrites=true&w=majority`;
 
 mongoose
-    .connect(uri, {
-      useNewUrlParser: true,
-      useUnifiedTopology: true
-    })
-    .then((() => console.log("Connected to Mongo!")))
-    .catch(err => console.error("Error connecting to Mongo", err));
+  .connect(uri, {
+    useNewUrlParser: true,
+    useUnifiedTopology: true
+  })
+  .then((() => console.log("Connected to Mongo!")))
+  .catch(err => console.error("Error connecting to Mongo", err));
 
 //*********          ROUTES             ********//
 
@@ -35,8 +35,8 @@ app.use((req, res, next) => {
 app.use(helmet.crossOriginResourcePolicy({ policy: "cross-origin" }));
 
 
-app.use('/api/auth', routesUsers);
-app.use('/api/sauces', routesSauces);
+app.use('/api/auth', usersRouter);
+app.use('/api/sauces', saucesRouter);
 app.use('/images', express.static(path.join(__dirname, 'images')));
 
-module.exports =  app ;
+module.exports = app;
