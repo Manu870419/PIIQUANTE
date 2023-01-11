@@ -1,29 +1,26 @@
 const multer = require('multer');
 
-const MIME_TYPES = {
-  'image/jpg': 'jpg',
-  'image/jpeg': 'jpg',
-  'image/png': 'png',
-  'image/webp': 'webp',
-  'image/bmp': 'bmp',
-};
-
+//1: Demande à multer d'enregistrer les fichiers dans le dossier "images"
 const storage = multer.diskStorage({
-  //1: Demande à multer d'enregistrer les fichiers dans le dossier "images"
-  destination: (req, file, callback) => {
-    callback(null, 'images');
-  },
-  //2: Avec le nom créé via la fonction suivante:
-  filename: (req, file, callback) => {
-    //convertis les espaces en _ dans le nom de fichier original 
-    const name = file.originalname.split(' ').join('_');
-    //récupère le type MIME du fichier
-    const extension = MIME_TYPES[file.mimetype];
-    //construit le nouveau nom : "sans_espaceDate.type"
-    callback(null, name + Date.now() + '.' + extension);
+  destination: "images/",
+  filename: function (req, file, cb) {
+    cb(null, makeFilename(req, file))
   }
-});
-// Methode single pour ne traiter qu'un fichier de type 'image' à la fois
-const upload =  multer({storage}).single('image');
+})
 
-module.exports = {upload};
+//2: Avec le nom créé via la fonction suivante:
+function makeFilename(req, file) {
+  console.log("req, file:", file)
+  //convertis les espaces en _ dans le nom de fichier original et construit le nouveau nom : "sans_espaceDate.type"
+  const fileName = `${Date.now()}-${file.originalname}`.replace(/\s/g, "-")
+  file.fileName = fileName
+  return fileName
+}
+
+// Methode single pour ne traiter qu'un fichier de type 'image' à la fois
+const upload = multer({ storage }).single('image');
+
+module.exports = { upload };
+
+
+

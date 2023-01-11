@@ -2,6 +2,7 @@ const Sauce = require("../models/sauces");
 const mongoose = require('mongoose');
 const { unlink } = require("fs/promises");
 
+
 function getAllSauces(req, res) {
    Sauce.find({})
       .then(sauces => { res.status(200).send(sauces) })
@@ -42,14 +43,15 @@ function createSauces(req, res) {
 }
 
 function modifySauce(req, res) {
-   const { params:{id}} = req
+   const { params: { id } } = req
+   console.log("req.file", req.file)
    const hasNewImage = req.file != null
    // Mise à jour de la nouvelle image et de son URL
    const payload = makePayload(hasNewImage, req)
 
    Sauce.findByIdAndUpdate(id, payload)
       // Test si la requête provient bien du propriétaire
-      .then ((dbResponse) => sendClientResponse(dbResponse, res))
+      .then((dbResponse) => sendClientResponse(dbResponse, res))
       // suppression du fichier image
       .then((sauce) => deleteImage(sauce))
       // Vérifis que le fichier est supprimé
@@ -57,38 +59,46 @@ function modifySauce(req, res) {
       .catch((err) => console.error("PROBLEM UPDATING", err))
 }
 
-function deleteSauce(req, res){
-   const {id} = req.params
-   // Ciblage de la sauce à modifier avec l'id présent dans l'url
+function deleteImage(sauce) {
+   if (sauce == null) return
+   console.log("DELETE IMAGE", sauce)
+   // suppression de l'ancienne image
+   const imageToDelete = sauce.imageUrl.split("/").at(-1)
+   return unlink("images/" + imageToDelete)
+}
+
+function deleteSauce(req, res) {
+   const { id } = req.params
+   // 1. L'ordre de suppression est envoyé à Mongo
    Sauce.findByIdAndDelete(id)
       // Test si la requête  provient bien du propriétaire de la sauce 
       .then((sauce) => sendClientResponse(sauce, res))
       // suppression du fichier image
       .then((sauce) => deleteImage(sauce))
-       // Vérifis que le fichier est supprimé
-      .then ((res) => console.log("FILE DELETED", res))
-      .catch((err) => res.status(500).send({ message: err}))
+      // Vérifis que le fichier est supprimé
+      .then((res) => console.log("FILE DELETED", res))
+      .catch((err) => res.status(500).send({ message: err }))
 }
 
 //Test si la requête provient bien du propriétaire
-function sendClientResponse(sauce,res) {
-   if(sauce == null) {
+function sendClientResponse(sauce, res) {
+   if (sauce == null) {
       console.log("NOTHING TO UPDATE")
       //Il n'y a rien à mettre à jour ou l'objet est introuvable dans la base de donnée 
-      return res.status(404).send({ message: "Object not found in database"}) 
+      return res.status(404).send({ message: "Object not found in database" })
    }
-    // Tout va bien , mise à jour
+   // Tout va bien , mise à jour
    console.log("ALL GOOD, UPDATING:", sauce)
    // Mise à jour réussi
-   return Promise.resolve(res.status(200).send({ message: "Successfully update"})).then(() => sauce)
+   return Promise.resolve(res.status(200).send({ message: "Successfully update" })).then(() => sauce)
 }
- // Mise à jour de la nouvelle image
+// Mise à jour de la nouvelle image
 function makePayload(hasNewImage, req) {
    console.log("hasNewImage:", hasNewImage)
    // si ce n'est pas une nouvelle image
-   if(!hasNewImage) return req.body
+   if (!hasNewImage) return req.body
    // on parse la requête
-   const payload = Json.parse(req.body.sauce)
+   const payload = JSON.parse(req.body.sauce)
    // mise à jour de l'URL de la nouvelle image
    payload.imageUrl = makeImageUrl(req, req.file.filename)
    console.log("Nouvelle image à gérer!!")
@@ -98,16 +108,9 @@ function makePayload(hasNewImage, req) {
 
 // mise à jour de l'URL de la nouvelle image
 function makeImageUrl(req, fileName) {
-   return req.protocol + "://" + req.get("host") + "/images"+ fileName
+   return req.protocol + "://" + req.get("host") + "/images/" + fileName
 }
 
-function deleteImage(sauce){
-   if(sauce == null) return
-   console.log("DELETE IMAGE", sauce)
-   // suppression de l'ancienne image
-   const imageToDelete = sauce.imageUrl.split("/").at(-1)
-   return unlink("images/" + imageToDelete)
-}
 
 
 function likeSauce(req, res) {
