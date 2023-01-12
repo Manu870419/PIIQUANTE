@@ -53,7 +53,7 @@ function modifySauce(req, res) {
       // Test si la requête provient bien du propriétaire
       .then((dbResponse) => sendClientResponse(dbResponse, res))
       // suppression du fichier image
-      .then((sauce) => deleteImage(sauce))
+      .then((sauce) => hasNewImage && deleteImage(sauce))
       // Vérifis que le fichier est supprimé
       .then((res) => console.log("FILE DELETED", res))
       .catch((err) => console.error("PROBLEM UPDATING", err))
@@ -64,7 +64,8 @@ function deleteImage(sauce) {
    console.log("DELETE IMAGE", sauce);
    // suppression de l'ancienne image
    const imageToDelete = sauce.imageUrl.split("/").at(-1);
-   return unlink("images/" + imageToDelete);
+   unlink("images/" + imageToDelete)
+      .then(() => console.log("Fichier delete"))
 };
 
 function deleteSauce(req, res) {
